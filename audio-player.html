@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audio Player</title>
+    <script>
+        const audio = new Audio('audios/Armandinho _ Sol Loiro - Ainda Gosto de Você [QvhYNkuCZN8].mp3'); // Atualize o caminho
+        audio.volume = 0.5;
+        audio.loop = true;
+    
+        // Restaura tempo salvo
+        window.addEventListener('load', () => {
+            const savedTime = localStorage.getItem('audioCurrentTime');
+            if (savedTime) {
+                audio.currentTime = parseFloat(savedTime);
+            }
+        });
+    
+        // Salva tempo atual a cada segundo
+        setInterval(() => {
+            localStorage.setItem('audioCurrentTime', audio.currentTime);
+        }, 1000);
+    
+        // Sistema seguro de comunicação
+        window.addEventListener('message', (e) => {
+            try {
+                if (e.data.action === 'play') audio.play().catch(e => console.log("Play bloqueado:", e));
+                if (e.data.action === 'pause') audio.pause();
+                if (e.data.action === 'volume') audio.volume = e.data.value;
+            } catch (error) {
+                console.error("Erro no player de áudio:", error);
+            }
+        });
+    
+        // Inicia após interação (com tratamento de erro)
+        function initAudio() {
+            document.removeEventListener('click', initAudio);
+            audio.play().catch(e => console.log("Autoplay bloqueado:", e));
+        }
+        document.addEventListener('click', initAudio);
+    </script>
+    
+</head>
+<body></body>
+</html>
