@@ -517,6 +517,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- Modal de Login -->
+        <div id="loginModal" class="modal">
+            <div class="modal-content" style="max-width: 400px;">
+                <span class="close-modal"
+                    onclick="document.getElementById('loginModal').style.display='none'">&times;</span>
+                <h2 style="text-align: center; margin-bottom: 20px;">Acesso Restrito</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginUsername">Usuário</label>
+                        <input type="text" id="loginUsername" placeholder="Digite seu usuário" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">Senha</label>
+                        <input type="password" id="loginPassword" placeholder="Digite sua senha" required>
+                    </div>
+
+                    <div id="loginError" style="color: #ff4444; display: none; margin-bottom: 15px;"></div>
+
+                    <button type="submit" class="submit-btn">Entrar</button>
+                </form>
+            </div>
+        </div>
     </main>
 
     <footer>

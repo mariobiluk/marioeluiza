@@ -598,10 +598,16 @@ document.addEventListener('DOMContentLoaded', function () {
     updateCounters();
 });
 
-    // Configurações
+// Configurações
 const JSONBIN_API_KEY = '$2a$10$k5yoNnGcYVgXP5ynEya1L.JCvGLqSB09uhPtFsyFfBuRd2znDNasS';
 const JSONBIN_BIN_ID = '685d7cc08a456b7966b635f5';
 const IMGBB_API_KEY = '5c0a6b5494c21e4e392f7fd946d4fd64';
+
+// Credenciais válidas
+const VALID_USERS = {
+    'mario': 'mario123',
+    'luiza': 'luiza123'
+};
 
 // Elementos do modal
 const uploadModal = document.getElementById('uploadModal');
@@ -613,50 +619,55 @@ const uploadPlaceholder = document.getElementById('uploadPlaceholder');
 const uploadForm = document.getElementById('uploadForm');
 const submitBtn = uploadForm.querySelector('button[type="submit"]');
 
+// Elementos do login modal
+const loginModal = document.getElementById('loginModal');
+const loginForm = document.getElementById('loginForm');
+const loginError = document.getElementById('loginError');
+
 // Função para mostrar mensagens
 function showAlert(message, type = 'info') {
-  const alert = document.createElement('div');
-  alert.textContent = message;
-  alert.style.position = 'fixed';
-  alert.style.bottom = '20px';
-  alert.style.left = '50%';
-  alert.style.transform = 'translateX(-50%)';
-  alert.style.padding = '10px 20px';
-  alert.style.backgroundColor = type === 'error' ? '#ff4444' : '#4CAF50';
-  alert.style.color = 'white';
-  alert.style.borderRadius = '5px';
-  alert.style.zIndex = '1000';
-  document.body.appendChild(alert);
-  
-  setTimeout(() => alert.remove(), 3000);
+    const alert = document.createElement('div');
+    alert.textContent = message;
+    alert.style.position = 'fixed';
+    alert.style.bottom = '20px';
+    alert.style.left = '50%';
+    alert.style.transform = 'translateX(-50%)';
+    alert.style.padding = '10px 20px';
+    alert.style.backgroundColor = type === 'error' ? '#ff4444' : '#4CAF50';
+    alert.style.color = 'white';
+    alert.style.borderRadius = '5px';
+    alert.style.zIndex = '1000';
+    document.body.appendChild(alert);
+
+    setTimeout(() => alert.remove(), 3000);
 }
 
 // Função para mostrar/ocultar loading
 function toggleLoading(show) {
-  const loadingElement = document.getElementById('loadingOverlay');
-  if (show) {
-    if (!loadingElement) {
-      const loader = document.createElement('div');
-      loader.id = 'loadingOverlay';
-      loader.innerHTML = `
+    const loadingElement = document.getElementById('loadingOverlay');
+    if (show) {
+        if (!loadingElement) {
+            const loader = document.createElement('div');
+            loader.id = 'loadingOverlay';
+            loader.innerHTML = `
         <div class="loading-content">
           <div class="loading-spinner"></div>
           <p>Enviando foto...</p>
         </div>
       `;
-      document.body.appendChild(loader);
+            document.body.appendChild(loader);
+        }
+    } else {
+        if (loadingElement) {
+            loadingElement.remove();
+        }
     }
-  } else {
-    if (loadingElement) {
-      loadingElement.remove();
-    }
-  }
 }
 
 // Função para adicionar foto ao grid
 function addPhotoToGrid(photo) {
-  const grid = document.querySelector('.photo-grid');
-  grid.innerHTML += `
+    const grid = document.querySelector('.photo-grid');
+    grid.innerHTML += `
     <div class="grid-item" data-category="${photo.category}">
       <img src="${photo.url}" alt="${photo.title}">
       <div class="photo-overlay">
@@ -673,138 +684,171 @@ function addPhotoToGrid(photo) {
 }
 
 // Função principal de upload
-uploadForm.addEventListener('submit', async function(e) {
-  e.preventDefault();
-  
-  const title = document.getElementById('photoTitle').value;
-  const description = document.getElementById('photoDescription').value;
-  const date = document.getElementById('photoDate').value;
-  const category = document.getElementById('photoCategory').value;
-  const fileInput = document.getElementById('photoFile');
-  
-  if (!fileInput.files[0]) {
-    showAlert('Selecione uma foto!', 'error');
-    return;
-  }
+uploadForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
 
-  try {
-    // Mostrar loading
-    toggleLoading(true);
-    submitBtn.disabled = true;
+    const title = document.getElementById('photoTitle').value;
+    const description = document.getElementById('photoDescription').value;
+    const date = document.getElementById('photoDate').value;
+    const category = document.getElementById('photoCategory').value;
+    const fileInput = document.getElementById('photoFile');
 
-    // 1. Upload para ImgBB
-    const imgFormData = new FormData();
-    imgFormData.append('image', fileInput.files[0]);
-    
-    const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
-      method: 'POST',
-      body: imgFormData
-    });
-    
-    const imgData = await imgResponse.json();
-    
-    // 2. Preparar dados da foto
-    const photoData = {
-      title,
-      description,
-      date,
-      url: imgData.data.url,
-      category,
-      timestamp: new Date().toISOString()
-    };
-    
-    // 3. Salvar no JSONBin
-    const binResponse = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_API_KEY
-      },
-      body: JSON.stringify({ 
-        photos: [...(await loadPhotos()), photoData] 
-      })
-    });
-    
-    // 4. Mostrar na galeria
-    addPhotoToGrid(photoData);
-    showAlert('Foto adicionada com sucesso!');
-    
-    // Fechar modal e resetar formulário
-    uploadModal.style.display = 'none';
-    document.body.style.overflow = 'auto';
-    this.reset();
-    imagePreview.style.display = 'none';
-    uploadPlaceholder.style.display = 'flex';
-    
-  } catch (error) {
-    console.error('Erro:', error);
-    showAlert('Erro ao enviar foto', 'error');
-  } finally {
-    // Ocultar loading
-    toggleLoading(false);
-    submitBtn.disabled = false;
-  }
+    if (!fileInput.files[0]) {
+        showAlert('Selecione uma foto!', 'error');
+        return;
+    }
+
+    try {
+        // Mostrar loading
+        toggleLoading(true);
+        submitBtn.disabled = true;
+
+        // 1. Upload para ImgBB
+        const imgFormData = new FormData();
+        imgFormData.append('image', fileInput.files[0]);
+
+        const imgResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+            method: 'POST',
+            body: imgFormData
+        });
+
+        const imgData = await imgResponse.json();
+
+        // 2. Preparar dados da foto
+        const photoData = {
+            title,
+            description,
+            date,
+            url: imgData.data.url,
+            category,
+            timestamp: new Date().toISOString()
+        };
+
+        // 3. Salvar no JSONBin
+        const binResponse = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY
+            },
+            body: JSON.stringify({
+                photos: [...(await loadPhotos()), photoData]
+            })
+        });
+
+        // 4. Mostrar na galeria
+        addPhotoToGrid(photoData);
+        showAlert('Foto adicionada com sucesso!');
+
+        // Fechar modal e resetar formulário
+        uploadModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        this.reset();
+        imagePreview.style.display = 'none';
+        uploadPlaceholder.style.display = 'flex';
+
+    } catch (error) {
+        console.error('Erro:', error);
+        showAlert('Erro ao enviar foto', 'error');
+    } finally {
+        // Ocultar loading
+        toggleLoading(false);
+        submitBtn.disabled = false;
+    }
 });
 
 // Função para carregar fotos existentes
 async function loadPhotos() {
-  try {
-    const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-      headers: { 'X-Master-Key': JSONBIN_API_KEY }
-    });
-    const data = await response.json();
-    return data.record?.photos || [];
-  } catch (error) {
-    console.error('Erro ao carregar fotos:', error);
-    return [];
-  }
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        const data = await response.json();
+        return data.record?.photos || [];
+    } catch (error) {
+        console.error('Erro ao carregar fotos:', error);
+        return [];
+    }
 }
 
-// Controle do Modal
+// Controle do Login
+let isAuthenticated = false;
+
+loginForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const username = document.getElementById('loginUsername').value;
+    const password = document.getElementById('loginPassword').value;
+
+    if (VALID_USERS[username] && VALID_USERS[username] === password) {
+        isAuthenticated = true;
+        loginModal.style.display = 'none';
+        uploadModal.style.display = 'block';
+        loginError.style.display = 'none';
+    } else {
+        loginError.style.display = 'block';
+        loginError.textContent = 'Usuário ou senha incorretos';
+    }
+});
+
+// Controle do Modal de Upload
 openModalBtn.addEventListener('click', () => {
-  uploadModal.style.display = 'block';
-  document.body.style.overflow = 'hidden';
+    if (isAuthenticated) {
+        uploadModal.style.display = 'block';
+        document.body.style.overflow = 'hidden';
+    } else {
+        loginModal.style.display = 'block';
+        document.getElementById('loginUsername').focus();
+    }
 });
 
 closeModalBtn.addEventListener('click', () => {
-  uploadModal.style.display = 'none';
-  document.body.style.overflow = 'auto';
-  uploadForm.reset();
-  imagePreview.style.display = 'none';
-  uploadPlaceholder.style.display = 'flex';
-});
-
-window.addEventListener('click', (e) => {
-  if (e.target === uploadModal) {
     uploadModal.style.display = 'none';
     document.body.style.overflow = 'auto';
     uploadForm.reset();
     imagePreview.style.display = 'none';
     uploadPlaceholder.style.display = 'flex';
-  }
+});
+
+// Fechar modais ao clicar fora
+window.addEventListener('click', (e) => {
+    if (e.target === uploadModal) {
+        uploadModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        uploadForm.reset();
+        imagePreview.style.display = 'none';
+        uploadPlaceholder.style.display = 'flex';
+    }
+
+    if (e.target === loginModal) {
+        loginModal.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        loginForm.reset();
+        loginError.style.display = 'none';
+    }
 });
 
 // Pré-visualização da imagem
-photoFileInput.addEventListener('change', function() {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    
-    reader.onload = function(e) {
-      imagePreview.src = e.target.result;
-      imagePreview.style.display = 'block';
-      uploadPlaceholder.style.display = 'none';
+photoFileInput.addEventListener('change', function () {
+    const file = this.files[0];
+    if (file) {
+        const reader = new FileReader();
+
+        reader.onload = function (e) {
+            imagePreview.src = e.target.result;
+            imagePreview.style.display = 'block';
+            uploadPlaceholder.style.display = 'none';
+        }
+
+        reader.readAsDataURL(file);
+    } else {
+        imagePreview.style.display = 'none';
+        uploadPlaceholder.style.display = 'flex';
     }
-    
-    reader.readAsDataURL(file);
-  } else {
-    imagePreview.style.display = 'none';
-    uploadPlaceholder.style.display = 'flex';
-  }
 });
 
 // Carrega fotos ao iniciar
 document.addEventListener('DOMContentLoaded', async () => {
-  const photos = await loadPhotos();
-  photos.forEach(photo => addPhotoToGrid(photo));
+    const photos = await loadPhotos();
+    photos.forEach(photo => addPhotoToGrid(photo));
 });
